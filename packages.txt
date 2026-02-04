@@ -1,2 +1,4 @@
 chromium
 chromium-driver
+libxml2-dev
+libxslt1-dev
