@@ -18,12 +18,13 @@ st.set_page_config(page_title="Web Content Scraper", page_icon="🌐", layout="w
 
 
 def setup_driver():
-    """Alternative setup using system ChromeDriver"""
+    """Alternative setup - Cloud compatible"""
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument(
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     )
@@ -31,26 +32,27 @@ def setup_driver():
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option("useAutomationExtension", False)
 
+    # Add these lines for cloud deployment
+    chrome_options.binary_location = "/usr/bin/chromium"
+
     try:
-        # Method 1: Try without webdriver-manager (uses system ChromeDriver)
-        driver = webdriver.Chrome(options=chrome_options)
-        driver.execute_script(
-            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-        )
-        return driver
-    except Exception as e1:
+        # For cloud: use system chromium-driver
+        service = Service("/usr/bin/chromedriver")
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+    except:
+        # Fallback for local development
         try:
-            # Method 2: Use webdriver-manager as fallback
+            driver = webdriver.Chrome(options=chrome_options)
+        except:
             from webdriver_manager.chrome import ChromeDriverManager
 
             service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
-            driver.execute_script(
-                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-            )
-            return driver
-        except Exception as e2:
-            raise Exception(f"Both methods failed. Error 1: {e1}, Error 2: {e2}")
+
+    driver.execute_script(
+        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+    )
+    return driver
 
 
 def fetch_with_selenium(url, progress_callback=None):
